@@ -1,0 +1,145 @@
+Les requêtes et question du doc
+
+1- Clients (nom, adresse, téléphone) dont la deuxième lettre est A, la quatrième I et la cinquième N.
+
+SELECT nom, adrue, CP, ville, notel
+FROM CLIENT
+WHERE nom
+LIKE '%A%IN';
+/------------------------------------------------------------------------------------------------------------/
+2-Numéros des commandes passées par Mme RABIN (*).
+
+SELECT num_commande
+FROM COMMANDE.C, CLIENT CL
+WHERE nom= "RABIN"
+AND C.code_c = CL.code_c;
+/------------------------------------------------------------------------------------------------------------/
+3-Liste des articles (Désignation) achetés par Mme RABIN (*).
+
+SELECT designation
+FROM PRODUIT P, CLIENT CL, COMMANDE CO, ligne_commande LC
+WHERE nom='RABIN'
+AND CL.code_c = CO.code_c
+AND CO.num_commande = LC.numero_ligne
+AND LC.reference = P.reference;
+/------------------------------------------------------------------------------------------------------------/
+4-Montant HT (total) des commandes  de Mme RABIN (*).
+
+SELECT SUM(totam_HT) AS "montant HT"
+FROM COMMANDE C, CLIENT CL
+WHERE C.nom= "RABIN";
+/------------------------------------------------------------------------------------------------------------/
+5-Montant HT (total) des commandes de Mme RABIN (*) hors transport (calculé d'après le prix unitaire hors taxes des articles achetés).
+
+SELECT SUM(prix_unitaire*quantite_demandee)
+FROM LIGNE_COMMANDE L, CLIENT CL, PRODUIT P, COMMANDE C
+WHERE C.code_c = CL.code_c
+AND L.reference = P.reference
+AND L.num = L.numero_ligne
+AND CL.nom = "RABIN";
+
+/N'affiche que le prix de transport/
+
+SELECT (SUM(DISTINCT total_HT)-SUM(prix_unitraire_ht*quantite_demandee))
+FROM LIGNE_COMMANDE L, CLIENT CL
+WHERE C.code_c = CL.code_c
+AND L.reference = P.reference
+AND L.numero_ligne = C.num_commande
+AND CL.nom = "RABIN";
+/------------------------------------------------------------------------------------------------------------/
+6-Chiffre d'affaires total pour le mois d'octobre 2008.
+
+SELECT SUM(total_ht) AS "CA Octobre"
+FROM COMMANDE
+WHERE MONTH(date_commande)= "10"
+AND YEAR(date_commande)= "2008",
+
+/Autre façon de l'écrire/
+
+SELECT SUM(total_ht) AS "CA Octobre"
+FROM COMMANDE
+WHERE date_commande
+LIKE "2008-10%";
+/------------------------------------------------------------------------------------------------------------/
+7-Chiffre d'affaires de chaque vendeur pour le mois d'octobre 2008 (Nom du vendeur, CA).
+
+SELECT nom, SUM(total_HT) AS "CA Octobre 2008"
+FROM COMMANDE C, VENDEUR V
+WHERE C.code_v = V.code_v
+AND MONTH(date_commande)="10"
+AND YEAR(date_commande)="2008"
+GROUP BY nom;
+/------------------------------------------------------------------------------------------------------------/
+8- Liste des chiffres d'affaires quotidiens supérieurs à 300€ (date, CA journalier) d'après les dates de commande.
+
+SELECT date_commande, SUM(total_HT) AS "CA JOURNALIER"
+FROM COMMANDE
+GROUP BY date_commande
+HAVING SUM(total_HT)>300;
+/------------------------------------------------------------------------------------------------------------/
+Question 9 : Que fait cette requête ? (voir Ecoledirect pour l'énoncé)
+//
+//
+//
+/------------------------------------------------------------------------------------------------------------/
+Question 10 : Créer une table « commission » qui contiendrait un code, un libellé de cette commission, un pourcentage entier qui correspondrait à la commission versée.
+
+Insérer 2 commissions : 1- A / libA / 5    2- B / libB / 10
+
+INSERT INTO COMMISSION VALUES('A', 'libA', 5); // Insérer les données dans la table COMMISSION
+INSERT INTO COMMISSION VALUES('B', 'libB', 10); //
+/------------------------------------------------------------------------------------------------------------/
+Question 11: Que doit-on modifier dans la base pour que cette table permette d'allouer une commission  et une seule à chaque vendeur suivant le code commission, indiquer les requêtes permettant de réaliser cet objectif (champ supplémentaire, relation, index).
+
+Nous devons modidier la table VENDEUR et ajouter un champ Code_com en clé étrangère en référence à code_com de la table COMMISSION.
+
+ALTER TABLE VENDEUR // modifier la table VENDEUR
+ADD column Code_com VARCHAR(2); // ajouter une colonne dans la table VENDEUR
+
+UPDATE VENDEUR	// ModifierMettre à jour la table VENDEUR
+WHERE Code_v= 15;	
+
+UPDATE VENDEUR 
+SET Code_com='B'
+WHERE Code_v= 17;
+
+ALTER TABLE VENDEUR // modifier la table VENDEUR
+ADD CONSTRAINT FK_VEN_COMMISSION 
+FOREIGN KEY (Code_com) REFERENCES COMMISSION (Code_com);
+/------------------------------------------------------------------------------------------------------------/
+Question 12 : Prix au kilogramme de chaque article classé du moins coûteux au plus coûteux (désignation, prix au kilogramme).
+
+(1000 * PU_HT) / [(Qté *(Descriptif='G')) + Qté*poids_pièce*(Descriptif='P')]  // la réponde ici
+
+//SELECT Designation, (1000*Prix_unitaire_ht)/((Quantite*(Descriptif='G'))+(Quantite*poids_pieces*(Descriptif='P'))) AS "Prix au kilo"
+//FROM PRODUIT
+//ORDER BY 2;
+/------------------------------------------------------------------------------------------------------------/
+Question 13 : total du stock en kilogramme.
+
+SELECT SUM(((((Descriptif='G')*Quantite+((Descriptif='P')*Quantite*poids_pieces))*Stock)) / 1000) AS "Poids total en Kg"
+FROM PRODUIT;
+/------------------------------------------------------------------------------------------------------------/
+Requête 9 : Que fait cette requête ?
+
+SELECT designation, Count(ligne_commande.reference)
+FROM ligne_commande, produit
+WHERE produit.reference=ligne_commande.reference
+GROUP BY designation
+HAVING Count(ligne_commande.reference)>=2
+ORDER BY 2 DESC;
+
+Cette requête permet de
+
+/------------------------------------------------------------------------------------------------------------/
+Question 14 : Le code du client qui a passé la commande la plus chère.
+SELECT Code_c, MAX(total_ht)
+FROM CLIENT CL, COMMANDE C, PRODUIT P
+WHERE CL.Code_c = C.Code_c;
+
+/------------------------------------------------------------------------------------------------------------/
+Question 15 : Le nom du client qui a passé la commande la plus chère.
+SELECT Nom_c, MAX(total_ht)
+FROM CLIENT CL, COMMANDE C, PRODUIT P
+WHERE CL.Code_c = C.Code_c;
+
